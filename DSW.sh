@@ -48,6 +48,7 @@ ControlNet_URLS=(
 )
 CLIP_URLS=()
 REPO_URLS=(
+    "https://gitcode.net/overbill1683/stablediffusion.git"
     "https://gitcode.net/overbill1683/taming-transformers.git"
     "https://gitcode.net/overbill1683/k-diffusion.git"
     "https://gitcode.net/overbill1683/CodeFormer.git"
@@ -72,10 +73,9 @@ FILE_NAME_FROM_URL() {
 
 # 下载模型、子仓库和扩展
 download_models() {
-    local FIR="$1"
     loop() {
         for _url in "${MODEL_URLS[@]}"; do
-            download_thead "$_url" "$FIR" &> >(add_log "[ASYNC] ") &
+            download_thead "$_url" "$1" &> >(add_log "[ASYNC] ") &
         done
 
     }
@@ -83,20 +83,18 @@ download_models() {
 }
 
 download_VAE() {
-    local FIR="$1"
     loop() {
         for _url in "${VAE_URLS[@]}"; do
-            download_thead "$_url" "$FIR" &> >(add_log "[ASYNC] ") &
+            download_thead "$_url" "$1" &> >(add_log "[ASYNC] ") &
         done
     }
     loop &
 }
 
 download_ControlNet() {
-    local FIR="$1"
     loop() {
         for _url in "${ControlNet_URLS[@]}"; do
-            download_thead "$_url" "$FIR" &> >(add_log "[ASYNC] ") &
+            download_thead "$_url" "$1" &> >(add_log "[ASYNC] ") &
         done
     }
     loop &
@@ -143,7 +141,7 @@ env_set() {
     download_ControlNet $WEBUI_ControlNet_FOLDER_PATH
     download_extensions
     download_repos
-    wait
+    
 }
 
 python_env(){
@@ -187,4 +185,5 @@ python_env &> >(add_log "[children] ")
 
 git clone https://gitcode.net/overbill1683/stable-diffusion-webui $WEBUI_FOLDER_PATH
 env_set
+sleep 300
 start
