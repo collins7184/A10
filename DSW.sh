@@ -3,6 +3,7 @@
 # Path: this script
 export SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 
+echo "!!![shell start]---------------------------------------------------------------------------------------------------"
 timestamp() {
     date +"[%Y-%m-%d %H:%M:%S]"
 }
@@ -11,13 +12,12 @@ add_log() {
     add="$1"
     stdbuf -oL -eL tee >(stdbuf -oL -eL awk -v prefix="$(timestamp)$add " '{ print prefix $0 }' >>"$(dirname "$0")/.sd_setting_env_shell.log") 2>&1
 }
-echo "!!![shell start]---------------------------------------------------------------------------------------------------"
 
 # 将所有输出重定向到日志文件并在终端中显示
 exec > >(add_log)
 
 # 定义变量
-WORKSPACE_PATH=$(pwd)
+WORKSPACE_PATH="/mnt/workspace"
 WEBUI_FOLDER_PATH="$WORKSPACE_PATH/stable-diffusion-webui"
 WEBUI_MODELS_FOLDER_PATH="$WEBUI_FOLDER_PATH/models/Stable-diffusion"
 WEBUI_VAE_FOLDER_PATH="$WEBUI_FOLDER_PATH/models/VAE"
@@ -48,7 +48,6 @@ ControlNet_URLS=(
 )
 CLIP_URLS=()
 REPO_URLS=(
-    "https://gitcode.net/overbill1683/stablediffusion.git"
     "https://gitcode.net/overbill1683/taming-transformers.git"
     "https://gitcode.net/overbill1683/k-diffusion.git"
     "https://gitcode.net/overbill1683/CodeFormer.git"
@@ -73,9 +72,10 @@ FILE_NAME_FROM_URL() {
 
 # 下载模型、子仓库和扩展
 download_models() {
+    local FIR="$1"
     loop() {
         for _url in "${MODEL_URLS[@]}"; do
-            download_thead "$_url" "$1" &> >(add_log "[ASYNC] ") &
+            download_thead "$_url" "$FIR" &> >(add_log "[ASYNC] ") &
         done
 
     }
@@ -83,18 +83,20 @@ download_models() {
 }
 
 download_VAE() {
+    local FIR="$1"
     loop() {
         for _url in "${VAE_URLS[@]}"; do
-            download_thead "$_url" "$1" &> >(add_log "[ASYNC] ") &
+            download_thead "$_url" "$FIR" &> >(add_log "[ASYNC] ") &
         done
     }
     loop &
 }
 
 download_ControlNet() {
+    local FIR="$1"
     loop() {
         for _url in "${ControlNet_URLS[@]}"; do
-            download_thead "$_url" "$1" &> >(add_log "[ASYNC] ") &
+            download_thead "$_url" "$FIR" &> >(add_log "[ASYNC] ") &
         done
     }
     loop &
@@ -136,26 +138,12 @@ profiles() {
 }
 
 env_set() {
-    download_models "$WEBUI_MODELS_FOLDER_PATH"
-    download_VAE "$WEBUI_VAE_FOLDER_PATH"
-    download_ControlNet "$WEBUI_ControlNet_FOLDER_PATH"
+    download_models $WEBUI_MODELS_FOLDER_PATH
+    download_VAE $WEBUI_VAE_FOLDER_PATH
+    download_ControlNet $WEBUI_ControlNet_FOLDER_PATH
     download_extensions
     download_repos
-    
-}
-
-python_env(){
-    bash -c '
-        PIP_INDEX_URL="https://mirrors.bfsu.edu.cn/pypi/web/simple"
-        GFPGAN_PACKAGE="git+https://gitee.com/zdevt/GFPGAN.git"
-        CLIP_PACKAGE="git+https://gitee.com/zdevt/CLIP.git"
-        OPENCLIP_PACKAGE="git+https://gitee.com/ufhy/open_clip.git"
-
-        # 安装 Python 依赖
-        python3 -m pip install --upgrade pip
-        # 安装依赖
-        pip3 install --index-url=$PIP_INDEX_URL $GFPGAN_PACKAGE $CLIP_PACKAGE $OPENCLIP_PACKAGE
-    '
+    wait
 }
 
 start() {
@@ -181,9 +169,18 @@ start() {
 apt-get update
 apt-get install -y aria2 && apt-get upgrade -y
 
-python_env &> >(add_log "[children] ")
+bash -c '
+    PIP_INDEX_URL="https://mirrors.bfsu.edu.cn/pypi/web/simple"
+    GFPGAN_PACKAGE="git+https://gitee.com/zdevt/GFPGAN.git"
+    CLIP_PACKAGE="git+https://gitee.com/zdevt/CLIP.git"
+    OPENCLIP_PACKAGE="git+https://gitee.com/ufhy/open_clip.git"
+
+    # 安装 Python 依赖
+    python3 -m pip install --upgrade pip
+    # 安装依赖
+    pip3 install --index-url=$PIP_INDEX_URL $GFPGAN_PACKAGE $CLIP_PACKAGE $OPENCLIP_PACKAGE
+' &> >(add_log "[ASYNC] ")
 
 git clone https://gitcode.net/overbill1683/stable-diffusion-webui $WEBUI_FOLDER_PATH
 env_set
-sleep 300
 start
