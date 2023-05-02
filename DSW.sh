@@ -135,9 +135,8 @@ env_set() {
     download_models "$WEBUI_MODELS_FOLDER_PATH"
     download_VAE "$WEBUI_VAE_FOLDER_PATH"
     download_ControlNet "$WEBUI_ControlNet_FOLDER_PATH"
-    download_extensions
-    download_repos
-    
+    download_extensions &> >(add_log "[ASYNC] ") &
+    download_repos &> >(add_log "[ASYNC] ") &
 }
 
 python_env(){
