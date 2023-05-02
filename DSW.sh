@@ -3,7 +3,6 @@
 # Path: this script
 export SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 
-echo "!!![shell start]---------------------------------------------------------------------------------------------------"
 timestamp() {
     date +"[%Y-%m-%d %H:%M:%S]"
 }
@@ -12,6 +11,7 @@ add_log() {
     add="$1"
     stdbuf -oL -eL tee >(stdbuf -oL -eL awk -v prefix="$(timestamp)$add " '{ print prefix $0 }' >>"$(dirname "$0")/.sd_setting_env_shell.log") 2>&1
 }
+echo "!!![shell start]---------------------------------------------------------------------------------------------------"
 
 # 将所有输出重定向到日志文件并在终端中显示
 exec > >(add_log)
