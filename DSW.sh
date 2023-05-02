@@ -17,7 +17,7 @@ add_log() {
 exec > >(add_log)
 
 # 定义变量
-WORKSPACE_PATH="/mnt/workspace"
+WORKSPACE_PATH=$(pwd)
 WEBUI_FOLDER_PATH="$WORKSPACE_PATH/stable-diffusion-webui"
 WEBUI_MODELS_FOLDER_PATH="$WEBUI_FOLDER_PATH/models/Stable-diffusion"
 WEBUI_VAE_FOLDER_PATH="$WEBUI_FOLDER_PATH/models/VAE"
@@ -146,6 +146,20 @@ env_set() {
     wait
 }
 
+python_env(){
+    bash -c '
+        PIP_INDEX_URL="https://mirrors.bfsu.edu.cn/pypi/web/simple"
+        GFPGAN_PACKAGE="git+https://gitee.com/zdevt/GFPGAN.git"
+        CLIP_PACKAGE="git+https://gitee.com/zdevt/CLIP.git"
+        OPENCLIP_PACKAGE="git+https://gitee.com/ufhy/open_clip.git"
+
+        # 安装 Python 依赖
+        python3 -m pip install --upgrade pip
+        # 安装依赖
+        pip3 install --index-url=$PIP_INDEX_URL $GFPGAN_PACKAGE $CLIP_PACKAGE $OPENCLIP_PACKAGE
+    '
+}
+
 start() {
     # 启动服务
     set -e
@@ -169,17 +183,7 @@ start() {
 apt-get update
 apt-get install -y aria2 && apt-get upgrade -y
 
-bash -c '
-    PIP_INDEX_URL="https://mirrors.bfsu.edu.cn/pypi/web/simple"
-    GFPGAN_PACKAGE="git+https://gitee.com/zdevt/GFPGAN.git"
-    CLIP_PACKAGE="git+https://gitee.com/zdevt/CLIP.git"
-    OPENCLIP_PACKAGE="git+https://gitee.com/ufhy/open_clip.git"
-
-    # 安装 Python 依赖
-    python3 -m pip install --upgrade pip
-    # 安装依赖
-    pip3 install --index-url=$PIP_INDEX_URL $GFPGAN_PACKAGE $CLIP_PACKAGE $OPENCLIP_PACKAGE
-' &> >(add_log "[ASYNC] ")
+python_env &> >(add_log "[children] ")
 
 git clone https://gitcode.net/overbill1683/stable-diffusion-webui $WEBUI_FOLDER_PATH
 env_set
